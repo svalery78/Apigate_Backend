@@ -22,7 +22,7 @@ module.exports = function (agenda) {
           port: 587,
           auth: {
             user: 'noreply-apigate',
-            pass: 'Ee4@2$VhNeW89'
+            pass: 'Ee4@2$VhNeW'
           },
           //Настройки ниже нужны для того, чтобы запросы принимал наш почтовый сервер
           secureConnection: false,

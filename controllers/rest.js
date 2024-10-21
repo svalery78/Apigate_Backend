@@ -229,10 +229,10 @@ const sendObjectRequest = async (objectId, tableName, SystemAddressee, data, Att
     if (object) {
       const url = await getWSURL(SystemAddressee.WSUrlBase, SystemAddressee._id);
       const serviceName = getServiceName(SystemAddressee.type, url);
-      const sendedData = formatData(data, SystemAddressee.type, serviceName, 'string');
+      const sendedData = formatData(data, SystemAddressee.type, serviceName, 'string', restId);
       const params = getParams(SystemAddressee);
       const response = await sendRestRequest('post', url, sendedData, params, object._id, tableName, SystemAddressee, serviceName, action, restId);
-      response.systemObjectCode = getObjCode(response, SystemAddressee.type);
+      response.systemObjectCode = getObjCode(response, SystemAddressee.type, SystemAddressee.DataStructure);
 
       if (AttachSystemSourceID && response.operationStatus === 'SUCCESS' && response.systemObjectCode && object.SystemSourceAttach && object.SystemSourceAttach.length > 0) {
         await sendAttachments(SystemAddressee, object.SystemSourceAttach, response.systemObjectCode, objectId, AttachSystemSourceID, restId);
@@ -301,9 +301,8 @@ const clearErrorData = function (errorData, tableName) {
  * @returns {Object} {status: , error: }
  */
 const sendRestRequest = async function (method, url, data, params, id, tableName, system, serviceName, action, restId, needReplaceUrl) {
-  let loggingData;
-
   try {
+    let loggingData;
     const requestSaved = data && tableName === 'attachment' ? data.url : data;
     const requestData = data && tableName === 'attachment' ? data.data : data;
     loggingData = tableName === 'attachment' ? null : requestData;
@@ -381,7 +380,7 @@ const sendObjectChangeStatus = async (object, system, restId) => { //, requestDa
   }*/
 
   if (object.Status === 'Отклонен') {
-    data.SystemAddresseeComment = object.SystemAddresseeComment;
+    data.SystemAddresseeСomment = object.SystemAddresseeСomment;
   }
 
   if (object.Status === 'Выполнен') {
@@ -414,7 +413,7 @@ const repeatRestRequest = async function (restId, type) {
   const rest = await RestModel.model.findOne({ '_id': new ObjectId(restId) });
   let object;
 
-  if (rest && (rest.status !== 'SUCCESS' || type === 'front')) {
+  if (rest && rest.status !== 'SUCCESS') {
     const system = await SystemModel.model.findOne({ '_id': new ObjectId(rest.systemId) });
 
     if (system) {
@@ -447,13 +446,8 @@ const repeatRestRequest = async function (restId, type) {
           if (object) {
             switch (rest.action) {
               case 'createObject':
-                // ФТ_801633 - закомментировано
-                await updateRest(restId, { status: 'SENDING' });
                 //вся отправка
-                if (object.Status === 'Ошибка регистрации' || object.Status === 'Новый') { // def 9104
-                  //, jobNumber: 0
-                  agenda.now('createObject', { objectId: object._id, type: 'front', restId: restId });
-                }
+                agenda.now('createObject', { objectId: object._id, jobNumber: 0 });
                 break;
               case 'changeStatusObject':
                 if (type !== 'front') {
@@ -546,23 +540,15 @@ const updateRest = async function (id, data) {
         repeatParams = await resendingController.getRepeatIntervalAndTotal(rest['sendTriesCount']);
         needRepeatSending = data['status'] === 'ERROR' && repeatParams && repeatParams.countTotal && Number(repeatParams.countTotal) > rest['sendTriesCount'] && rest.status !== 'SUCCESS';
       }
+      // отправляем повторно только если обьект не в статусе Новое или Ошибка регистрации. Если статус Новое или Ошибка регистрации, 
+      // то повторная отправка обьекта несколько раз делается отдельным job
       if (rest.tableName === 'object') {
-        // ФТ_801633 - переделано
-        if (data['status'] === 'ERROR' && !needRepeatSending) {
-          if (rest.action === 'createObject') {
-            //needRepeatSending = false;
-            const object = await ObjectModel.model.findOne({ '_id': rest.objectID });
-            if (object && (object.Status === 'Ошибка регистрации' || object.Status === 'Новый')) {
-              if (object.Status !== 'Ошибка регистрации') {
-                object.Status = 'Ошибка регистрации';
-                await object.save();
-                agenda.now('changeStatus', { objectId: object._id });
-              }
-            }
-            agenda.now('sendCreateIntegrationError', { objectId: object._id });
-          } else {
-            agenda.now('sendUpdateIntegrationError', { restId: rest._id });
-          }
+        //const object = await ObjectModel.model.findOne({ '_id': new ObjectId(rest.objectID) });
+        //(!object || object.Status === 'Новый' || object.Status === 'Ошибка регистрации')
+        if (rest.action === 'createObject') { 
+          needRepeatSending = false;
+        } else if (data['status'] === 'ERROR' && !needRepeatSending) {
+          agenda.now('sendUpdateIntegrationError', { restId: rest._id });
         }
       }
 

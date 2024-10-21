@@ -46,12 +46,12 @@ const getEnvironmentMeta = (environment) => {
    };
 }
 
-const environment = getEnvironment(process.env.APIGATE_BACK_ENV);
-const envMeta = getEnvironmentMeta(environment);
+const envMeta = getEnvironmentMeta(getEnvironment(process.env.APIGATE_BACK_ENV));
 
 const PATHS = new Map();
 // для интеграции 4me
 PATHS.set('objectChangeStatus4me', envMeta.baseUrl + 'trusted/4me/object/objectChangeStatus');
+PATHS.set('object4me', envMeta.baseUrl + 'trusted/4me/object/:id?');
 // действия доступные системе
 PATHS.set('object', envMeta.baseUrl + 'object/:id?');
 PATHS.set('objectChangeStatus', envMeta.baseUrl + 'object/changeStatus/:id?');
@@ -73,11 +73,9 @@ PATHS.set('userList', envMeta.baseUrl + 'userList');
 PATHS.set('systemList', envMeta.baseUrl + 'systemList');
 PATHS.set('settingList', envMeta.baseUrl + 'settingList');
 PATHS.set('repeatRequest', envMeta.baseUrl + 'repeatRequest');
-PATHS.set('jobfail', envMeta.baseUrl + 'monitoring/jobfail');
 //PATHS.set('attachment', envMeta.baseUrl + 'attachment');
 
 const CONNECTION_PARAMS = {
-   environment: environment,
    mongoUrl: envMeta.mongoUrl,
    port: process.env.APIGATE_BACK_PORT || 13081,
    paths: PATHS,
@@ -99,23 +97,7 @@ const CONNECTION_PARAMS = {
    //logMaxSize: 10240, // 10kb for test purpose
    logMaxFiles: '5',
    rejectUnauthorized: true,
-   mailOptions: {
-      host: process.env.APIGATE_BACK_EMAIL_HOST || 'owa.mos.ru',
-      port: process.env.APIGATE_BACK_EMAIL_PORT ? Number(process.env.APIGATE_BACK_EMAIL_PORT) : 587,
-      auth: {
-        user: process.env.APIGATE_BACK_EMAIL_USER || 'noreply-apigate',
-        pass: process.env.APIGATE_BACK_EMAIL_PASS || 'Ee4@2$VhNeW89',
-      },
-      secureConnection: ((process.env.APIGATE_BACK_EMAIL_SECURE_CONNECTION ?? false) === 'true'),
-      secure: ((process.env.APIGATE_BACK_EMAIL_SECURE ?? false) === 'true'),
-      requireTLS: ((process.env.APIGATE_BACK_EMAIL_TLS ?? true) === 'true'),
-      tls: {
-        rejectUnauthorized: ((process.env.APIGATE_BACK_EMAIL_REJECT_UNAUTH ?? false) === 'true')
-      },
-      from: process.env.APIGATE_BACK_EMAIL_REJECT_FROM || 'noreply-apigate@it.mos.ru',
-      restartNotifyEnvs: process.env.APIGATE_BACK_EMAIL_RESTART_NOTIFY_ENVS || 'localhost,production',
-      restartNotifyRecievers: process.env.APIGATE_BACK_ALERT_EMAIL || 'pakhomovann@it.mos.ru'
-   }
+   //filesUploadPath: 'uploads/'
 }
 
 module.exports = CONNECTION_PARAMS;

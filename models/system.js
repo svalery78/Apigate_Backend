@@ -15,7 +15,9 @@ const systemSchema = new Schema({
   UserId: {
     type: Schema.Types.ObjectId,
     ref: 'user',
-    required: true
+    required: function() {
+      return this.type === 'sm' || this.DataStructure === '4me (json)';
+    }
   },
   ResponsibleFIO: {
     type: String,
@@ -31,7 +33,9 @@ const systemSchema = new Schema({
   },
   WSUrlBase: { //Указывается baseUrl, а не полный URL.
     type: String,
-    required: true
+    required: function() {
+      return this.type === 'sm' || this.DataStructure === '4me (json)';
+    }
   },
   WSUrlAttach: {
     type: String
@@ -54,12 +58,22 @@ const systemSchema = new Schema({
   },
   DataStructure: {
     type: String,
-    enum: ['','4me (json)']
+    enum: ['','4me (json)', 'telegram']
   },
   AuthType: {
     type: String,
-    enum: ['Basic', 'No auth']
+    enum: ['','Basic', 'No auth']
+  },
+  noReply: {
+    type: Boolean,
+    //required: true
   }
+  /*chatId: {
+    type: String
+  },
+  parseMode: {
+    type: String
+  }*/
 }, {
   timestamps: true
 });

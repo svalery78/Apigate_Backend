@@ -47,7 +47,7 @@ const objectSchema = new Schema({
     type: String,
     required: true
   },
-  SystemSourceComment: {
+  SystemSourceСomment: {
     type: String
   },
   SystemSourceAttach: {
@@ -68,7 +68,7 @@ const objectSchema = new Schema({
     type: String,
     // required: true
   },
-  SystemAddresseeComment: {
+  SystemAddresseeСomment: {
     type: String,
     // required: true
   },
@@ -82,7 +82,6 @@ const objectSchema = new Schema({
     type: String,
     default: 'ApiGateSysrouter',
     enum: services
-    //[ 'ApiGateSysrouter', 'ApiGateMESH' ],
   },
   Resolution: {
     type: String

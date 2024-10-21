@@ -1,11 +1,10 @@
 const nodemailer = require('nodemailer');
-const ObjectModel = require('../../models/object');
-const SystemModel = require('../../models/system');
+const ObjectModel = require('../models/object');
+const SystemModel = require('../models/system');
 const ObjectId = require('mongodb').ObjectId;
-const logger = require('../../middlewares/logger');
 
 module.exports = function (agenda) {
-  agenda.define('sendCreateIntegrationError', async (job) => {
+  agenda.define('sendEmailIntegrationError', async (job) => {
     const objectId = job.attrs.data.objectId;
     const object = await ObjectModel.model.findOne({ '_id': objectId });
 
@@ -17,8 +16,8 @@ module.exports = function (agenda) {
           host: 'owa.mos.ru',
           port: 587,
           auth: {
-            user: 'noreply-apigate',
-            pass: 'Ee4@2$VhNeW'
+            user: 'noreply-itsm-echd',
+            pass: 'Zf5@xybC'
           },
           //Настройки ниже нужны для того, чтобы запросы принимал наш почтовый сервер
           secureConnection: false,
@@ -31,31 +30,29 @@ module.exports = function (agenda) {
 
         // письмо
         const mailOptions = {
-          from: 'noreply-apigate@it.mos.ru',
+          from: 'noreply-itsm-echd@it.mos.ru',
           to: WSSystem.ResponsibleEmail,
           subject: 'Проблемы с регистрацией Обращения, переданного из Внешней СТП',
           text: `В Вашу Систему «${WSSystem.name}» передан Объект из Внешней СТП.`
             + `Время регистрации Объекта истекло, но Объект все еще не создан в Вашей Системе.`
-            + `Необходимо проверить корректность настроек интеграции с APIGate.\n`
+            + `Необходимо проверить корректность настроек интеграции с Внешними СТП.\n`
             + `Внешняя СТП: ${object.SystemSourceName}`
             + `Объект.ID: ${objectId}\n`
             + `Данное сообщение создано автоматически. Пожалуйста, не отвечайте на это письмо.`,
           html: '<style> p {line-height: 2; }</style> <p>В Вашу Систему «' + WSSystem.name + '» передан Объект из Внешней СТП.<br>'
             + 'Время регистрации Объекта истекло, но Объект все еще не создан в Вашей Системе.<br>'
-            + 'Необходимо проверить корректность настроек интеграции с APIGate.<br><br>'
-            + '<b>Внешняя СТП: </b>' + object.SystemSourceName + '<br>'
-            + '<b>Объект.ID: </b>' + objectId + '<br><br>'
+            + 'Необходимо проверить корректность настроек интеграции с Внешними СТП.<br><br>'
+            + 'Внешняя СТП: ' + object.SystemSourceName + '<br>'
+            + 'Объект.ID: ' + objectId + '<br><br>'
             + 'Данное сообщение создано автоматически. Пожалуйста, не отвечайте на это письмо.</p>',
         }
 
         //Отправляем письмо
-        transporter.sendMail(mailOptions, (error, response) => {
-          if (error) {
-            logger.error(`Ошибка отправки письма по созданию обращения ${WSSystem.ResponsibleEmail} по объекту ${objectId}: - ${error}`);
+        /*transporter.sendMail(mailOptions, (err, response) => {
+          if (err) {
           } else {
-            logger.info(`Письмо ошибки создания обращения отправлено ${WSSystem.ResponsibleEmail} по объекту ${objectId}`);
           }
-        });
+        });*/
       }
     }
   });

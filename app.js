@@ -13,34 +13,14 @@ const systemController = require('./controllers/system');
 const userController = require('./controllers/user');
 const restController = require('./controllers/rest');
 const settingController = require('./controllers/setting');
-const emailController = require('./controllers/email');
-const monitoringController = require('./controllers/monitoring');
 const RestModel = require('./models/rest');
 const port = cfg.port;
 const basicAuth = require('./middlewares/basicAuth');
 const whiteListAuth = require('./middlewares/whiteListAuth');
 const winston = require('winston');
 const expressWinston = require('express-winston');
-const Moment = require('moment-timezone');
 //const attachmentController = require('./controllers/attachment');
 //const multer = require('multer');
-//const upload = multer({ dest: cfg.filesUploadPath });
-
-try {
-   const restartNotifyEnvs = cfg.mailOptions?.restartNotifyEnvs ? cfg.mailOptions.restartNotifyEnvs.split(',') : [];
-   const restartNotifyRecievers = cfg.mailOptions?.restartNotifyRecievers ? cfg.mailOptions.restartNotifyRecievers.split(',') : [];
-   if (restartNotifyEnvs && restartNotifyRecievers && restartNotifyEnvs.indexOf(cfg.environment) >= 0 && restartNotifyRecievers.length > 0) {
-      console.log('Отправка email о рестарте');
-      const restartTime = Moment(new Date()).tz('Europe/Moscow').format('DD-MM-YYYY HH:mm:ss');
-      const restartEmailText = `Система ApiGate перезапущена ${restartTime}.
-      \n\nСообщение создано автоматически. Пожалуйста, не отвечайте на это письмо.`;
-      const restartEmailHtml = `<style> p {line-height: 2; }</style><p>Система ApiGate перезапущена ${restartTime}.
-      <br><br>Сообщение создано автоматически. Пожалуйста, не отвечайте на это письмо.</p>`;
-      emailController.sendEmail('Выполнен перезапуск Системы', 'Система ApiGate перезапущена', restartEmailText, restartEmailHtml, restartNotifyRecievers);
-   }
-} catch (error) {
-   console.log('Ошибка отправки письма о рестарте');
-}
 
 app.use(cors());
 app.use(
@@ -74,6 +54,8 @@ app.use(expressWinston.logger({
    ignoreRoute: function (req, res) { return false; }
 }));
 
+//const upload = multer({ dest: cfg.filesUploadPath });
+
 mongoose.connect(cfg.mongoUrl, {
    useUnifiedTopology: true
 })
@@ -91,6 +73,10 @@ mongoose.connect(cfg.mongoUrl, {
 
       app.post(cfg.paths.get('objectChangeStatus4me'), (req, res, next) => { whiteListAuth.verifyAccount(req, res, next) }, (req, res) => {
          objectController.changeStatus4me(req, res);
+      });
+
+      app.post(cfg.paths.get('object4me'), (req, res, next) => { whiteListAuth.verifyAccount(req, res, next) }, (req, res) => {
+         objectController.createObject(req, res);
       });
 
       // Статус изменен
@@ -226,11 +212,6 @@ mongoose.connect(cfg.mongoUrl, {
       //обновление пользователя
       app.put(cfg.paths.get('user'), (req, res, next) => { authJwt.verifyToken(req, res, next, 'Admin') }, (req, res) => {
          userController.saveUser(req, res);
-      })
-
-      // получение джобов для мониторинга
-      app.get(cfg.paths.get('jobfail'), (req, res, next) => { authJwt.verifyToken(req, res, next, ['Admin', 'System']) }, (req, res) => {
-         monitoringController.getJobList(req, res);
       })
 
       // отдельное добавление вложения - не используется

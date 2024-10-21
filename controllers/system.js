@@ -51,6 +51,7 @@ const createSystem = async function (req, res) {
   const WSUrlAttach = req.body.WSUrlAttach;
   const DataStructure = req.body.DataStructure;
   const AuthType = req.body.AuthType;
+  const noReply = req.body.noReply;
 
   try {
     const WSPassword = req.body.WSPassword ? CryptoJS.AES.encrypt(req.body.WSPassword, cfg.secret).toString() : null;
@@ -74,7 +75,8 @@ const createSystem = async function (req, res) {
       StpWSUrlPath: StpWSUrlPath,
       WSUrlAttach: WSUrlAttach,
       DataStructure: DataStructure,
-      AuthType: AuthType
+      AuthType: AuthType,
+      noReply: noReply
     });
 
     await system.save();
@@ -116,6 +118,7 @@ const saveSystem = async function (req, res) {
   const WSUrlAttach = req.body.WSUrlAttach;
   const DataStructure = req.body.DataStructure;
   const AuthType = req.body.AuthType;
+  const noReply = req.body.noReply;
 
   try {
     const WSPassword = req.body.WSPassword ? CryptoJS.AES.encrypt(req.body.WSPassword, cfg.secret).toString() : null;
@@ -142,6 +145,7 @@ const saveSystem = async function (req, res) {
         system.WSUrlAttach = WSUrlAttach;
         system.DataStructure = DataStructure;
         system.AuthType = AuthType;
+        system.noReply = noReply;
 
         if (req.body.WSPassword !== system.WSPassword) {
           system.WSPassword = WSPassword;

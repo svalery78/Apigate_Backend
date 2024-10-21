@@ -33,48 +33,33 @@ const stringify = (obj) => {
 
 // получение данных об ошибке
 const getErrorText = (error) => {
-   try {
-      if (typeof error === 'object') {
-         const retError = {
-            code: error.code,
-            syscall: error.syscall
-         };
-
-         if (error.response) {
-            retError.response = {
-               data: error.response.data,
-               status: error.response.status,
-               headers: error.response.headers,
-               config: {
-                  url: error.response.config?.url,
-                  method: error.response.config?.method,
-                  data: error.response.config?.data
-               }
-            }
+   if (typeof error === 'object') {
+      if (error.isAxiosError && error.toJSON) {
+         //return error.toJSON(error);
+         const errorObj = error.toJSON(error);
+         return {
+            message: errorObj.message,
+            errorName: errorObj.name,
+            stack: errorObj.stack
          }
-
-         if (error.result) {
-            retError.result = error.result;
-         }
-
-         if (error.isAxiosError && error.toJSON) {
-            const errorObj = error.toJSON(error);
-
-            retError.message = errorObj.message;
-            retError.errorName = errorObj.name;
-            retError.stack = errorObj.stack;
-         }
-
-         return retError;
       }
 
-      return error;
-   } catch (catchedError) {
-      return {
-         message: 'Не удалось получить текст ошибки',
-         error: catchedError
+      if (error.response) {
+         if (error.response.data) {
+            if (error.response.data.Messages) {
+               return error.response.data.Messages
+            }
+            return error.response.data
+         }
+         return error.response
+      }
+
+      if (error.result) {
+         return error.result
       }
    }
+
+   return error;
 }
 
 // получение результата выполнения запроса
@@ -124,7 +109,7 @@ const formatData = (data, systemType, serviceName, type) => {
       formattedData = {
          [serviceName]: type === 'string' ? { data: JSON.stringify(formattedData) } : formattedData
       }
-   } else if (systemType !== 'json') {
+   } else {
       formattedData = type === 'string' ? JSON.stringify(formattedData) : formattedData;
    }
 
@@ -263,12 +248,41 @@ const getResponseStatus = (status, requestStatus, url) => {
 }
 
 // получение кода созданного обьекта
-const getObjCode = (data, systemType) => {
+const getObjCode = (data, systemType, dataStructure) => {
    if (systemType == 'json') {
-      return data.id
+      switch (dataStructure) {
+         case 'telegram':
+            return data.ok && data.result ? data.result.message_id : null;
+         default:
+            return data.id;
+      }
    }
 
    return data.SystemAddresseeObjCode;
+}
+
+// получение статуса созданного обьекта
+const getCreateObjStatus = (data, systemType, dataStructure) => {
+   if (systemType == 'json') {
+      switch (dataStructure) {
+         case 'telegram':
+            return data.ok ? 'Доставлен' : 'Новый';
+         default:
+            return 'Зарегистрирован';
+      }
+   }
+
+   return 'Зарегистрирован';
+}
+
+/* получение url для отправки запроса. Появилась, так как решили при отправке в телеграм брать урл бота из данных,
+пришедших из системы-источника, а не из самой системы*/
+const getRequestUrl = (data, systemUrl) => {
+   if (data.AddresseeUrl) {
+      return data.AddresseeUrl;
+   }
+
+   return systemUrl;
 }
 
 module.exports = {
@@ -289,5 +303,7 @@ module.exports = {
    isVerifiedPath,
    getResponseStatus,
    getObjCode,
-   stringify
+   stringify,
+   getCreateObjStatus,
+   getRequestUrl
 };

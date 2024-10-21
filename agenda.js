@@ -13,7 +13,7 @@ jobTypes.forEach((type) => {
 });
 
 (async function () {
-  console.log('Cтартуем Agenda');
+  console.log('стартуем Agenda');
   try {
     const client = await MongoClient.connect(cfg.agenda.database.address, {
       connectTimeoutMS: 120000,

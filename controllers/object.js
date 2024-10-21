@@ -76,7 +76,7 @@ const changeStatus4me = async function (req, res) {
   const isVerifiedSystem = !req.user && isVerifiedPath(req.url);
   const dataObject = isVerifiedSystem ? req.body.payload : req.body;
   const id = dataObject.ID;
-  const systemAddresseeComment = dataObject.SystemAddresseeComment;
+  const systemAddresseeСomment = dataObject.SystemAddresseeСomment;
   const resolution = dataObject.Resolution;
   const resolutionType = dataObject.ResolutionType;
   const status = dataObject.Status;
@@ -97,13 +97,13 @@ const changeStatus4me = async function (req, res) {
   const restObj = await restController.createRest(req.url, id, dataObject, 'Входящий', 'SUCCESS', 'object', systemSource._id, 'changeStatusObject', null, ip);
 
   try {
-    if (!id || !status || status === 'Отклонен' && !systemAddresseeComment) {
+    if (!id || !status || status === 'Отклонен' && !systemAddresseeСomment) {
       result = {
         status: 'ERROR',
         message:  'Отсутствуют необходимые параметры запроса'
       }
       restController.updateRest(restObj._id, { status: result.status, result: result.message, sendTriesCount: 1 });
-      logger.info(`Метод changeStatus id=${id} status=${status} systemAddresseeComment=${systemAddresseeComment} - Отсутствуют необходимые параметры запроса`);
+      logger.info(`Метод changeStatus id=${id} status=${status} systemAddresseeСomment=${systemAddresseeСomment} - Отсутствуют необходимые параметры запроса`);
       return res.status(400).send(result);
     }
 
@@ -118,7 +118,7 @@ const changeStatus4me = async function (req, res) {
 
     let newData = {
       Status: status,
-      SystemAddresseeComment: systemAddresseeComment
+      SystemAddresseeСomment: systemAddresseeСomment
     }
 
     if (status === 'Выполнен') {
@@ -147,7 +147,7 @@ const changeStatus4me = async function (req, res) {
       }
       restController.updateRest(restObj._id, { status: result.status, result: result.message, sendTriesCount: 1 });
 
-      logger.error(`Метод changeStatus id=${id} status=${status} systemAddresseeComment=${systemAddresseeComment} - ${stringify(errorMessage)}`);
+      logger.error(`Метод changeStatus id=${id} status=${status} systemAddresseeСomment=${systemAddresseeСomment} - ${stringify(errorMessage)}`);
       res.status(500).send(result);
     }
   } catch (error) {
@@ -157,7 +157,7 @@ const changeStatus4me = async function (req, res) {
     }
     restController.updateRest(restObj._id, { status: result.status, result: result.message, sendTriesCount: 1 });
 
-    logger.error(`Метод changeStatus id=${id} status=${status} systemAddresseeComment=${systemAddresseeComment} - ${stringify(error)}`);
+    logger.error(`Метод changeStatus id=${id} status=${status} systemAddresseeСomment=${systemAddresseeСomment} - ${stringify(error)}`);
     errorHandler(res, error)
   }
 }
@@ -199,27 +199,30 @@ const getSTP = async function (id) {
  * @param {Object} res
  */
  const createObject = async function (req, res) {
-  const user = req.user;
-  const descriptionShort = req.body.DescriptionShort;
-  const contactFIO = req.body.ContactFIO;
-  const contactEmail = req.body.ContactEmail;
-  const contactPhone = req.body.ContactPhone;
-  const systemSourceObjCode = req.body.SystemSourceObjCode;
-  const systemSourceComment = req.body.SystemSourceComment;
-  const systemAddresseeSTPID = req.body.SystemAddresseeSTPID;
-  const service = req.body.service;
-  let systemSourceAttach = req.body.SystemSourceAttach;
-  let descriptionFull = req.body.DescriptionFull;
-  const mainFields = ['DescriptionShort', 'ContactFIO', 'ContactEmail', 'ContactPhone', 'SystemSourceObjCode', 'SystemSourceComment',
+  const isVerifiedSystem = !req.user && isVerifiedPath(req.url);
+  const user = isVerifiedSystem ? await UserModel.model.findOne({ login: req.body.account_id }) : req.user; 
+  const dataObject = isVerifiedSystem ? req.body.payload : req.body;
+
+  const descriptionShort = dataObject.DescriptionShort;
+  const contactFIO = dataObject.ContactFIO;
+  const contactEmail = dataObject.ContactEmail;
+  const contactPhone = dataObject.ContactPhone;
+  const systemSourceObjCode = dataObject.SystemSourceObjCode;
+  const systemSourceСomment = dataObject.SystemSourceСomment;
+  const systemAddresseeSTPID = dataObject.SystemAddresseeSTPID;
+  const service = dataObject.service;
+  let systemSourceAttach = dataObject.SystemSourceAttach;
+  let descriptionFull = dataObject.DescriptionFull;
+  const mainFields = ['DescriptionShort', 'ContactFIO', 'ContactEmail', 'ContactPhone', 'SystemSourceObjCode', 'SystemSourceСomment',
     'SystemAddresseeSTPID', 'SystemSourceAttach', 'DescriptionFull'];
   let result;
   let customFields = {};
   let restObj;
 
-  for (field in req.body) {
+  for (field in dataObject) {
     if (mainFields.indexOf(field) == -1) {
       customFields[field] = {
-        value: req.body[field]
+        value: dataObject[field]
       }
     }
   }
@@ -275,7 +278,7 @@ const getSTP = async function (id) {
       SystemSourceID: systemSource._id,
       SystemSourceName: systemSource.name,
       SystemSourceObjCode: systemSourceObjCode,
-      SystemSourceComment: systemSourceComment,
+      SystemSourceСomment: systemSourceСomment,
       SystemSourceAttach: systemSourceAttach,
       SystemAddresseeID: stp.SystemID,
       SystemAddresseeName: stp.name,
@@ -288,20 +291,20 @@ const getSTP = async function (id) {
     await object.save();
     const ip = requestIp.getClientIp(req);
     restObj = await restController.createRest(req.url, object._id, req.body, 'Входящий', 'SUCCESS', 'object', systemSource._id, 'createObject', null, ip);
-    agenda.now('createObject', { objectId: object._id }); //, jobNumber: 0
+    agenda.now('createObject', { objectId: object._id, jobNumber: 0 });
 
     result = {
       status: 'SUCCESS',
       ID: object._id,
       DescriptionShort: object.DescriptionShort,
       DescriptionFull: object.DescriptionFull,
-      ContactFIO: object.ContactFIO,
-      ContactEmail: object.ContactEmail,
+      СontactFIO: object.СontactFIO,
+      СontactEmail: object.СontactEmail,
       ContactPhone: object.ContactPhone,
       SystemSourceID: object.SystemSourceID,
       SystemSourceName: object.SystemSourceName,
       SystemSourceObjCode: object.SystemSourceObjCode,
-      SystemSourceComment: object.SystemSourceComment,
+      SystemSourceСomment: object.SystemSourceСomment,
       SystemSourceAttach: object.SystemSourceAttach,
       SystemAddresseeSTPID: object.SystemAddresseeSTPID,
       service: object.service
@@ -343,14 +346,14 @@ const saveObject = async function (req, res) {
   const contactEmail = req.body.ContactEmail;
   const contactPhone = req.body.ContactPhone;
   const systemSourceObjCode = req.body.SystemSourceObjCode;
-  const systemSourceComment = req.body.SystemSourceComment;
+  const systemSourceСomment = req.body.SystemSourceСomment;
   const status = req.body.Status;
   const systemAddresseeSTPID = req.body.SystemAddresseeSTPID;
   const systemSourceID = req.body.SystemSourceID;
   const systemSourceAttach = req.body.SystemSourceAttach;
   const systemAddresseeName = req.body.SystemAddresseeName;
   const systemAddresseeObjCode = req.body.SystemAddresseeObjCode;
-  const systemAddresseeComment = req.body.SystemAddresseeComment;
+  const systemAddresseeСomment = req.body.SystemAddresseeСomment;
   const systemAddresseeAttach = req.body.SystemAddresseeAttach;
   const resolution = req.body.Resolution;
   const resolutionType = req.body.ResolutionType;
@@ -381,13 +384,13 @@ const saveObject = async function (req, res) {
       object.SystemSourceID = systemSource._id;
       object.SystemSourceName = systemSource.name;
       object.SystemSourceObjCode = systemSourceObjCode;
-      object.SystemSourceComment = systemSourceComment;
+      object.SystemSourceСomment = systemSourceСomment;
       object.SystemSourceAttach = systemSourceAttach;
       object.SystemAddresseeID = stp.SystemID;
       object.SystemAddresseeSTPID = systemAddresseeSTPID;
       object.SystemAddresseeName = systemAddresseeName;
       object.SystemAddresseeObjCode = systemAddresseeObjCode;
-      object.SystemAddresseeComment = systemAddresseeComment;
+      object.SystemAddresseeСomment = systemAddresseeСomment;
       object.SystemAddresseeAttach = systemAddresseeAttach;
       object.Resolution = resolution;
       object.ResolutionType = resolutionType;
@@ -432,17 +435,17 @@ const getObject = async function (req, res) {
           DescriptionFull: object.DescriptionFull,
           ContactFIO: object.ContactFIO,
           ContactEmail: object.ContactEmail,
-          ContactPhone: object.ContactPhone,
+          СontactPhone: object.ContactPhone,
           SystemSourceID: object.SystemSourceID,
           SystemSourceName: object.SystemSourceName,
           SystemSourceObjCode: object.SystemSourceObjCode,
-          SystemSourceComment: object.SystemSourceComment,
+          SystemSourceСomment: object.SystemSourceСomment,
           SystemSourceAttach: object.SystemSourceAttach,
           SystemAddresseeSTPID: object.SystemAddresseeSTPID,
           SystemAddresseeID: object.SystemAddresseeID,
           SystemAddresseeName: systemAddressee.name,
           SystemAddresseeObjCode: object.SystemAddresseeObjCode,
-          SystemAddresseeComment: object.SystemAddresseeComment,
+          SystemAddresseeСomment: object.SystemAddresseeСomment,
           SystemAddresseeAttach: object.SystemAddresseeAttach,
           CustomFields: object.CustomFields,
           Resolution: object.Resolution,
